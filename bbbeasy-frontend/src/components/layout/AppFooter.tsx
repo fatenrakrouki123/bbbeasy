@@ -19,8 +19,6 @@
 import React, { useState, useEffect }from 'react';
 import { Button, Layout, Typography } from 'antd';
 import { Trans, withTranslation } from 'react-i18next';
-import PresetsService from "../../services/presets.service";
-import settingsService from "../../services/settings.service";
 import SettingsService from "../../services/settings.service";
 
 const { Footer } = Layout;
