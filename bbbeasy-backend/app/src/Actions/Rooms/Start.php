@@ -8,16 +8,16 @@ declare(strict_types=1);
  * Copyright (c) 2022-2023 RIADVICE SUARL and by respective authors (see below).
  *
  * This program is free software; you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free Software
+ * terms of the GNU Affero General Public License as published by the Free Software
  * Foundation; either version 3.0 of the License, or (at your option) any later
  * version.
  *
- * BBBEasy is distributed in the hope that it will be useful, but WITHOUT ANY
+ * BBBeasy is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- * PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+ * PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License along
- * with BBBEasy; if not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Affero General Public License along
+ * with BBBeasy. If not, see <https://www.gnu.org/licenses/>
  */
 
 namespace Actions\Rooms;
@@ -28,6 +28,7 @@ use BigBlueButton\Enum\Role;
 use BigBlueButton\Parameters\CreateMeetingParameters;
 use BigBlueButton\Parameters\GetMeetingInfoParameters;
 use BigBlueButton\Parameters\JoinMeetingParameters;
+use BigBlueButton\Responses\GetMeetingInfoResponse;
 use Enum\Presets\General;
 use Enum\ResponseCode;
 use Models\Preset;
@@ -134,7 +135,7 @@ class Start extends BaseAction
     }
 
     /**
-     * @return \BigBlueButton\Responses\GetMeetingInfoResponse
+     * @return GetMeetingInfoResponse
      */
     public function getMeetingInfo(string $meetingId, BigBlueButtonRequester $bbbRequester)
     {
@@ -157,7 +158,7 @@ class Start extends BaseAction
         $createParams->setAttendeePassword(DataUtils::generateRandomString());
         // @todo : set later via presets
 
-        $createParams->setModeratorOnlyMessage('to invite someone you can use this link http://bbbeasy.test/r/' . $link);
+        $createParams->setModeratorOnlyMessage('to invite someone you can use this link ' . $this->f3->get('SERVER.HTTP_ORIGIN') . $this->f3->get('client.room_url_prefix') . $link);
 
         // @fixme: delete after fixing the PHP library
         $createParams->setAllowRequestsWithoutSession(true);

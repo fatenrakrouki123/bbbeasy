@@ -4,15 +4,15 @@
  * Copyright (c) 2022-2023 RIADVICE SUARL and by respective authors (see below).
  *
  * This program is free software; you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free Software
+ * terms of the GNU Affero General Public License as published by the Free Software
  * Foundation; either version 3.0 of the License, or (at your option) any later
  * version.
  *
- * BBBEasy is distributed in the hope that it will be useful, but WITHOUT ANY
+ * BBBeasy is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- * PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+ * PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License along
+ * You should have received a copy of the GNU Affero General Public License along
  * with BBBEasy; if not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -77,9 +77,17 @@ const tagRender = (props: CustomTagProps) => {
         event.stopPropagation();
     };
     return (
-        <Tag color={value} onMouseDown={onPreventMouseDown} closable={closable} onClose={onClose}>
-            {label}
-        </Tag>
+        <Tooltip key="tooltipLabels" overlayClassName="install-tooltip" title={label}>
+            <Tag
+                className="room-label"
+                color={value}
+                onMouseDown={onPreventMouseDown}
+                closable={closable}
+                onClose={onClose}
+            >
+                {label}
+            </Tag>
+        </Tooltip>
     );
 };
 
@@ -105,30 +113,39 @@ const RoomDetails = () => {
     const [open, setOpen] = React.useState<boolean>(false);
     const [roomRecordings, setRoomRecordings] = React.useState<RecordingType[]>([]);
     const [loading, setLoading] = React.useState<boolean>(false);
-
+    const validateMessages = {
+        name: {
+            maxSize: t('room_name.maxSize'),
+            minSize: t('room_name.minSize'),
+        },
+        short_link: { maxSize: t('shortlink.maxSize') },
+    };
     const currentUser: UserType = AuthService.getCurrentUser();
 
     const navigate = useNavigate();
 
-    const validateInput = (rule, value) => {
-        if (value && value.length > 256) {
-            const message = t('room_name.maxSize');
-            return Promise.reject(new Error(message));
-        } else if (value && value.length < 4) {
-            const message = t('room_name.minSize');
-            return Promise.reject(new Error(message));
-        }
-        return Promise.resolve();
-    };
+    const validateInput = (rule, value, fieldName) => {
+        if (!value) return Promise.resolve();
 
-    const validInput = () => {
+        if (fieldName === 'name') {
+            if (value.length < 4) {
+                return Promise.reject(new Error(validateMessages.name.minSize));
+            }
+            if (value.length > 256) {
+                return Promise.reject(new Error(validateMessages.name.maxSize));
+            }
+        }
+
+        if (fieldName === 'short_link' && value.length > 256) {
+            return Promise.reject(new Error(validateMessages.short_link.maxSize));
+        }
+
         return Promise.resolve();
     };
 
     const startRoom = async () => {
         try {
             const values = await startForm.validateFields();
-            console.log(values.fullname);
 
             RoomsService.start_room(room.id, values.fullname)
                 .then((result) => {
@@ -384,8 +401,10 @@ const RoomDetails = () => {
                         required: isRequired && true,
                         message: <Trans i18nKey={(messageItem ?? item) + '.required'} />,
                     },
-                    // Add a custom rule for the 'name' field only
-                    { validator: item === 'name' ? validateInput : validInput },
+                    // General verification rule
+                    {
+                        validator: (rule, value) => validateInput(rule, value, item),
+                    },
                 ]}
             >
                 {formItemNode}
@@ -409,7 +428,16 @@ const RoomDetails = () => {
             return (
                 <Form form={startForm}>
                     {' '}
-                    <Form.Item name="fullname" label={t('fullname.label')}>
+                    <Form.Item
+                        name="fullname"
+                        label={t('fullname.label')}
+                        rules={[
+                            {
+                                required: true,
+                                message: <Trans i18nKey="fullname.required" />,
+                            },
+                        ]}
+                    >
                         <Input placeholder={t('fullname.label')} />
                     </Form.Item>
                 </Form>
@@ -473,13 +501,17 @@ const RoomDetails = () => {
                                                 {!isEditing ? (
                                                     <>
                                                         <Title level={3}>{room.name}</Title>
-                                                        <div>
-                                                            {room.labels.map((item) => (
-                                                                <Tag key={item.id} color={item.color}>
-                                                                    {item.name}
-                                                                </Tag>
-                                                            ))}
-                                                        </div>
+                                                        {currentUser != null ? (
+                                                            <>
+                                                                <div>
+                                                                    {room.labels.map((item) => (
+                                                                        <Tag key={item.id} color={item.color}>
+                                                                            {item.name}
+                                                                        </Tag>
+                                                                    ))}
+                                                                </div>
+                                                            </>
+                                                        ) : null}
 
                                                         {renderLinkOrUsername(open)}
                                                     </>
@@ -563,6 +595,7 @@ const RoomDetails = () => {
                             </Col>
                         </Row>
                         <RoomRecordings
+                            id={room.id}
                             loading={loading}
                             roomRecordings={roomRecordings}
                             open={showRecodingAndPresenttaions}

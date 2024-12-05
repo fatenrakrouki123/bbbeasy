@@ -4,19 +4,19 @@
  * Copyright (c) 2022-2023 RIADVICE SUARL and by respective authors (see below).
  *
  * This program is free software; you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free Software
+ * terms of the GNU Affero General Public License as published by the Free Software
  * Foundation; either version 3.0 of the License, or (at your option) any later
  * version.
  *
- * BBBEasy is distributed in the hope that it will be useful, but WITHOUT ANY
+ * BBBeasy is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- * PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+ * PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License along
+ * You should have received a copy of the GNU Affero General Public License along
  * with BBBEasy; if not, see <http://www.gnu.org/licenses/>.
  */
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useCallback } from 'react';
 import { withTranslation } from 'react-i18next';
 import { IRoute } from './routing/IRoute';
 import Router from './routing/Router';
@@ -54,8 +54,8 @@ interface IProps {
 }
 
 const App: React.FC<IProps> = ({ routes, isSider, logs }) => {
-    const [currentUser, setCurrentUser] = React.useState<UserType>(null);
-    const [currentSession, setCurrentSession] = React.useState<SessionType>(null);
+    const [currentUser, setCurrentUser] = React.useState<UserType | null>(null);
+    const [currentSession, setCurrentSession] = React.useState<SessionType | null>(null);
     const [isLogged, setIsLogged] = React.useState<boolean>(false);
 
     const [dataRooms, setDataRooms] = React.useState<RoomType[]>([]);
@@ -64,12 +64,12 @@ const App: React.FC<IProps> = ({ routes, isSider, logs }) => {
 
     const dataProvider = useMemo(
         () => ({ dataRooms, setDataRooms, dataLabels, setDataLabels, dataPresets, setDataPresets }),
-        [dataRooms, setDataRooms, dataLabels, setDataLabels, dataPresets, setDataPresets]
+        [dataRooms, dataLabels, dataPresets]
     );
 
     const userProvider = useMemo(
         () => ({ isLogged, setIsLogged, currentUser, setCurrentUser, currentSession, setCurrentSession }),
-        [isLogged, setIsLogged, currentUser, setCurrentUser, currentSession, setCurrentSession]
+        [isLogged, currentUser, currentSession]
     );
 
     const customTheme = {
@@ -88,38 +88,39 @@ const App: React.FC<IProps> = ({ routes, isSider, logs }) => {
         },
     };
 
-    const getRooms = (userId: number) => {
+    const getRooms = useCallback((userId: number) => {
         RoomsService.list_rooms(userId)
             .then((response) => {
                 setDataRooms(response.data);
             })
             .catch((error) => {
-                console.error(error);
+                console.error('Error fetching rooms:', error);
             });
-    };
-    const getLabels = () => {
+    }, []);
+
+    const getLabels = useCallback(() => {
         LabelsService.list_labels()
             .then((response) => {
                 setDataLabels(response.data);
             })
             .catch((error) => {
-                console.log(error);
+                console.error('Error fetching labels:', error);
             });
-    };
-    const getPresets = (userId: number) => {
+    }, []);
+
+    const getPresets = useCallback((userId: number) => {
         PresetsService.list_presets(userId)
             .then((response) => {
                 setDataPresets(response.data);
             })
             .catch((error) => {
-                console.log(error);
+                console.error('Error fetching presets:', error);
             });
-    };
+    }, []);
 
-    //loading page and user already logged => set current user
     useEffect(() => {
-        window.addEventListener('error', (e) => {
-            if (e.message === 'ResizeObserver loop limit exceeded') {
+        const handleResizeObserverError = (e: ErrorEvent) => {
+            if (e.message.includes('ResizeObserver')) {
                 const resizeObserverErrDiv = document.getElementById('webpack-dev-server-client-overlay-div');
                 const resizeObserverErr = document.getElementById('webpack-dev-server-client-overlay');
                 if (resizeObserverErr) {
@@ -129,16 +130,24 @@ const App: React.FC<IProps> = ({ routes, isSider, logs }) => {
                     resizeObserverErrDiv.setAttribute('style', 'display: none');
                 }
             }
-        });
-        const user: UserType = AuthService.getCurrentUser();
-        const session: SessionType = AuthService.getCurrentSession();
-        if (user != null && session != null) {
+        };
+
+        window.addEventListener('error', handleResizeObserverError);
+        return () => {
+            window.removeEventListener('error', handleResizeObserverError);
+        };
+    }, []);
+
+    useEffect(() => {
+        const user: UserType | null = AuthService.getCurrentUser();
+        const session: SessionType | null = AuthService.getCurrentSession();
+        if (user && session) {
             setCurrentUser(user);
             setCurrentSession(session);
             setIsLogged(true);
 
             const allowedGroups = Object.keys(user.permissions);
-            if (allowedGroups.length != 0) {
+            if (allowedGroups.length > 0) {
                 if (AuthService.isAllowedGroup(allowedGroups, 'logs')) {
                     Logger.info(logs);
                 }
@@ -153,11 +162,11 @@ const App: React.FC<IProps> = ({ routes, isSider, logs }) => {
                 }
             }
         }
-    }, []);
+    }, [getRooms, getLabels, getPresets, logs]);
 
     return (
         <StyleProvider hashPriority="high" transformers={[legacyLogicalPropertiesTransformer]}>
-            <Layout className={LocaleService.direction == 'rtl' ? 'page-layout-content-rtl' : 'page-layout-content'}>
+            <Layout className={LocaleService.direction === 'rtl' ? 'page-layout-content-rtl' : 'page-layout-content'}>
                 <ConfigProvider
                     theme={customTheme}
                     locale={LocaleService.antLocale}

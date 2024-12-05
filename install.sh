@@ -6,15 +6,15 @@
 # Copyright (c) 2022-2023 RIADVICE SUARL and by respective authors (see below).
 #
 # This program is free software; you can redistribute it and/or modify it under the
-# terms of the GNU Lesser General Public License as published by the Free Software
+# terms of the GNU Affero General Public License as published by the Free Software
 # Foundation; either version 3.0 of the License, or (at your option) any later
 # version.
 #
-# BBBEasy is distributed in the hope that it will be useful, but WITHOUT ANY
+# BBBeasy is distributed in the hope that it will be useful, but WITHOUT ANY
 # WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+# PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
+# You should have received a copy of the GNU Affero General Public License along
 # with BBBEasy; if not, see <http://www.gnu.org/licenses/>.
 #
 #
@@ -51,7 +51,15 @@ APP_DIR=$BASEDIR/../
 # Git tag, commits ahead & commit id under format '0.4-160-g3bb256c'
 # GIT_VERSION=$(git --git-dir="$BASEDIR/../.git" describe --tags --always HEAD)
 
-echo "BBBEASY - INSTALL SCRIPT"
+echo "BBBeasy - INSTALL SCRIPT"
+
+# Check for the OS
+source /etc/lsb-release
+
+if [[ "$DISTRIB_ID" != "Ubuntu" && "$DISTRIB_RELEASE" != "22.04" ]]; then
+  echo "Ubuntu 22.04 LTS (jammy) is required to install BBBeasy - https://releases.ubuntu.com/jammy/"
+  exit
+fi
 
 # Setup default values
 HV_HOST=$(hostname)
@@ -114,8 +122,14 @@ install_docker_deps() {
   apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 }
 
+install_common_deps() {
+  echo "Install basic dependencies"
+  apt-get install -y git gcc g++ make curl software-properties-common
+}
+
 install_deps() {
   cd /tmp
+
   echo "adding ondrej/php repository"
   add-apt-repository -y ppa:ondrej/php
 
@@ -131,9 +145,6 @@ install_deps() {
   apt-get update
   apt-get upgrade -y
 
-  echo "Install basic dependencies"
-  apt-get install -y git gcc g++ make
-
   echo "Install ubuntu tools"
   apt-get install -y wget gnupg2 lsb-release curl zip unzip bc ntp
 
@@ -144,10 +155,12 @@ install_deps() {
   apt-get install -y redis-server
 
   echo "Install node.js"
-  curl -sL https://deb.nodesource.com/setup_20.x -o nodesource_setup.sh
-  bash nodesource_setup.sh
-  rm nodesource_setup.sh
-  apt-get install -y nodejs
+  apt-get update
+  apt-get install -y ca-certificates curl gnupg
+  mkdir -p /etc/apt/keyrings
+  -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+  NODE_MAJOR=18
+  echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
 
   echo "Install PHP 8.2 with its dependencies"
   apt-get install -y php8.2-curl php8.2-cli php8.2-intl php8.2-redis php8.2-gd php8.2-fpm php8.2-pgsql \
@@ -277,10 +290,12 @@ install() {
   read_options "$@"
   if [[ "$INSTALL_TYPE" == "docker" ]]; then
     echo "-- Installing docker version --"
+    install_common_deps
     install_docker_deps
     install_docker
   elif [[ "$INSTALL_TYPE" == "git" ]]; then
     echo "-- Installing git version --"
+    install_common_deps
     install_deps
     service nginx stop
     generate_ssl

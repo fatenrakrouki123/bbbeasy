@@ -8,16 +8,16 @@ declare(strict_types=1);
  * Copyright (c) 2022-2023 RIADVICE SUARL and by respective authors (see below).
  *
  * This program is free software; you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free Software
+ * terms of the GNU Affero General Public License as published by the Free Software
  * Foundation; either version 3.0 of the License, or (at your option) any later
  * version.
  *
- * BBBEasy is distributed in the hope that it will be useful, but WITHOUT ANY
+ * BBBeasy is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- * PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+ * PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License along
- * with BBBEasy; if not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Affero General Public License along
+ * with BBBeasy. If not, see <https://www.gnu.org/licenses/>
  */
 
 namespace Actions\WebSocket;
@@ -66,7 +66,7 @@ class Server
     {
         $this->logger->debug('Agent ' . $agent->id() . ' connected');
 
-        $this->sendMessageToAllClients($agent->server(), sprintf('Client with ID %s joined', $agent->id()));
+        $this->sendMessageToAllClients($agent->server(), \sprintf('Client with ID %s joined', $agent->id()));
     }
 
     public function onDisconnect(Agent $agent): void
@@ -78,7 +78,7 @@ class Server
             socket_clear_error();
         }
 
-        $this->sendMessageToAllClients($agent->server(), sprintf('Client with ID %s left', $agent->id()));
+        $this->sendMessageToAllClients($agent->server(), \sprintf('Client with ID %s left', $agent->id()));
     }
 
     public function onIdle(Agent $agent): void
@@ -90,12 +90,12 @@ class Server
     {
         // This example is only utilizing text frames for application-specific payload.
         if (WS::Text !== $op) {
-            $this->logger->debug(sprintf('Agent %s sent a message with ignored opcode %s.', $agent->id(), $op));
+            $this->logger->debug(\sprintf('Agent %s sent a message with ignored opcode %s.', $agent->id(), $op));
 
             return;
         }
 
-        $this->logger->debug(sprintf('Agent %s sent a message: %s', $agent->id(), $data));
+        $this->logger->debug(\sprintf('Agent %s sent a message: %s', $agent->id(), $data));
 
         /**
          * Forward received message to all clients.
@@ -111,7 +111,7 @@ class Server
 
     public function onSend(Agent $agent, int $op, string $data): void
     {
-        $this->logger->debug(sprintf('Agent %s will receive a message: %s', $agent->id(), $data));
+        $this->logger->debug(\sprintf('Agent %s will receive a message: %s', $agent->id(), $data));
     }
 
     /**
