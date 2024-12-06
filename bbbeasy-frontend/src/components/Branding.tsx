@@ -160,8 +160,8 @@ const Branding = () => {
                 const newData: SettingsType = response.data.settings;
 
                 if (!CompareRecords(data, newData)) {
-                    Notifications.openNotificationWithIcon('success', t('edit_settings_success'));
                     setSettings(newData);
+                    Notifications.openNotificationWithIcon('success', t('edit_settings_success'));
                     setSetting(newData);
                 } else {
                     Notifications.openNotificationWithIcon('info', t('no_changes'));
