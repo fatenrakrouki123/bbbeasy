@@ -100,10 +100,10 @@ class Setting extends BaseModel
         $dataChecker->verify($form['company_name'], Validator::notEmpty()->setName('company_name'));
         $dataChecker->verify($form['platform_name'], Validator::notEmpty()->setName('platform_name'));
 
-        if ('' !== $form['term_url']) {
+        if (null !== $form['term_url'] && '' !== $form['term_url']) {
             $dataChecker->verify($form['term_url'], Validator::url()->setName('term_url'));
         }
-        if ('' !== $form['policy_url']) {
+        if (null !== $form['policy_url'] && '' !== $form['policy_url']) {
             $dataChecker->verify($form['policy_url'], Validator::url()->setName('policy_url'));
         }
         
