@@ -38,6 +38,7 @@ import PresetsService from 'services/presets.service';
 
 import { UserContext } from './lib/UserContext';
 import { DataContext } from 'lib/RoomsContext';
+import { SettingsProvider } from 'lib/SettingsContext';
 
 import { RoomType } from 'types/RoomType';
 import { LabelType } from 'types/LabelType';
@@ -166,6 +167,7 @@ const App: React.FC<IProps> = ({ routes, isSider, logs }) => {
                 >
                     <UserContext.Provider value={userProvider}>
                         <DataContext.Provider value={dataProvider}>
+                            <SettingsProvider>
                             {isLogged && isSider && <AppSider presets={dataPresets} />}
                             <Layout className="page-layout-body">
                                 <AppHeader />
@@ -174,6 +176,7 @@ const App: React.FC<IProps> = ({ routes, isSider, logs }) => {
                                 </Content>
                                 <AppFooter />
                             </Layout>
+                            </SettingsProvider>
                         </DataContext.Provider>
                     </UserContext.Provider>
                 </ConfigProvider>

@@ -36,6 +36,7 @@ import AuthService from '../services/auth.service';
 import { UploadFile } from 'antd/lib/upload/interface';
 import { SettingsType } from '../types/SettingsType';
 import { ThemeType } from '../types/ThemeType';
+import {useSettings} from "../lib/SettingsContext";
 
 type formType = {
     company_name: string;
@@ -58,6 +59,7 @@ const Branding = () => {
     const [wireframeStyle, setWireframeStyle] = React.useState<boolean>(false);
     const [file, setFile] = React.useState<UploadFile>(null);
     const [fileList, setFileList] = React.useState<UploadFile[]>(null);
+    const { setting, setSetting } = useSettings();
 
     const setSettings = (settings: SettingsType) => {
         setBrandColor(settings.brand_color);
@@ -89,7 +91,6 @@ const Branding = () => {
             };
             setFileList([settingLogo]);
             setFile(settingLogo);
-            console.log(settingLogo);
         }
         setIsLoading(false);
     };
@@ -101,6 +102,7 @@ const Branding = () => {
                 if (settings) {
                     setData(settings);
                     setSettings(settings);
+                    setSetting(settings);
                 }
             })
             .catch((error) => {
@@ -110,6 +112,7 @@ const Branding = () => {
         const settingsActions = AuthService.getActionsPermissionsByGroup('settings');
         setActions(settingsActions);
     }, []);
+
 
     const onFinish = () => {
         const settingsData: formType = settingsForm.getFieldsValue(true);
@@ -154,13 +157,12 @@ const Branding = () => {
         //edit settings
         SettingsService.edit_settings(settingsData)
             .then((response) => {
-                console.log(response);
-
                 const newData: SettingsType = response.data.settings;
 
                 if (!CompareRecords(data, newData)) {
                     Notifications.openNotificationWithIcon('success', t('edit_settings_success'));
                     setSettings(newData);
+                    setSetting(newData);
                 } else {
                     Notifications.openNotificationWithIcon('info', t('no_changes'));
                 }
@@ -168,7 +170,7 @@ const Branding = () => {
             .catch((error) => {
                 console.log(error);
             });
-    };
+        };
 
     return (
         <Row justify="center" className="branding-row">
